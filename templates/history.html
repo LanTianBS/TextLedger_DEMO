@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易明細 - 智能記帳助手</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0 text-center flex-grow-1">交易明細</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="text-muted">上個月結餘: <strong id="lastMonthBalance">${{ monthly_balance }}</strong></span>
+                        </div>
+                        <div id="filterOptions" class="mb-4">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <select id="typeFilter" class="form-select">
+                                        <option value="all">所有類型</option>
+                                        <option value="支出">僅支出</option>
+                                        <option value="收入">僅收入</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="categoryFilter" class="form-select">
+                                        <option value="all">所有類別</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="month" id="monthFilter" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No transactions message -->
+                        <div id="noTransactionsMessage" class="alert alert-info text-center" style="display: none;">
+                            <i class="bi bi-info-circle me-2"></i> 本月無消費紀錄
+                        </div>
+
+                        {% if transactions %}
+                        <!-- Bubble style transactions -->
+                        <div id="transactionsBubble" class="mt-4">
+                            {% for transaction in transactions %}
+                            <div class="transaction-bubble border rounded-3 p-3 mb-3 shadow-sm" data-type="{{ transaction.tx_type }}"
+                                data-category="{{ transaction.category.name }}"
+                                data-date="{{ transaction.date.strftime('%Y-%m') }}" data-id="{{ transaction.id }}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span>{{ transaction.date.strftime('%m-%d') }}</span>
+                                        <span class="ms-2 badge bg-info text-dark">{{ transaction.category.name }}</span>
+                                        <span class="ms-2 badge {% if transaction.tx_type == '支出' %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ transaction.tx_type }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <a href="{{ url_for('edit_transaction', transaction_id=transaction.id) }}"
+                                            class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ transaction.id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-2">
+                                    <span class="ms-2">{{ transaction.description }}</span>
+                                    <div class="text-end {% if transaction.tx_type == '支出' %}text-danger{% else %}text-success{% endif %}">
+                                        {{ '$' if transaction.tx_type == '支出' else '+$' }}{{ transaction.amount }}
+                                    </div>
+                                </div>
+                                <!-- 顯示明細 -->
+                                {% if transaction.items and json.loads(transaction.items) %}
+                                <div class="transaction-details mt-2">
+                                    <div class="details-header fw-bold text-primary ms-4">明細:</div>
+                                    {% for item in json.loads(transaction.items) %}
+                                    <div class="d-flex justify-content-between">
+                                        <span class="ms-5">{{ item.sub_description }}</span>
+                                        <span class="ms-5">${{ item.sub_amount }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle me-2"></i>目前沒有交易記錄
+                            <p class="mt-2">在LINE中開始記帳，資料將會顯示在這裡。</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap and JS dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.7/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Populate categories filter
+            const categories = new Set();
+            const transactions = document.querySelectorAll('.transaction-bubble');
+            transactions.forEach(transaction => {
+                const category = transaction.dataset.category;
+                if (category) {
+                    categories.add(category);
+                }
+            });
+
+            const categoryFilter = document.getElementById('categoryFilter');
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+
+            // Set current month as default
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('monthFilter').value = currentMonth;
+
+            // Apply filters on load
+            applyFilters();
+
+            // Add event listeners
+            document.getElementById('typeFilter').addEventListener('change', applyFilters);
+            document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+            document.getElementById('monthFilter').addEventListener('change', applyFilters);
+        });
+
+        function applyFilters() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+
+            let transactionsVisible = false;
+
+            const transactions = document.querySelectorAll('.transaction-bubble');
+            transactions.forEach(transaction => {
+                const type = transaction.dataset.type;
+                const category = transaction.dataset.category;
+                const date = transaction.dataset.date;
+
+                const typeMatch = typeFilter === 'all' || typeFilter === type;
+                const categoryMatch = categoryFilter === 'all' || categoryFilter === category;
+                const monthMatch = !monthFilter || monthFilter === date;
+
+                const visible = typeMatch && categoryMatch && monthMatch;
+                transaction.style.display = visible ? '' : 'none';
+
+                if (visible) {
+                    transactionsVisible = true;
+                }
+            });
+
+            // Show or hide "no transactions" message
+            const noTransactionsMessage = document.getElementById('noTransactionsMessage');
+            noTransactionsMessage.style.display = transactionsVisible ? 'none' : 'block';
+        }
+
+        function confirmDelete(transactionId) {
+            if (confirm('確定要刪除此交易記錄嗎？')) {
+                window.location.href = `/delete_transaction?transaction_id=${transactionId}`;
+            }
+        }
+    </script>
+</body>
+
+</html>

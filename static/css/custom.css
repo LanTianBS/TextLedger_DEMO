@@ -1,0 +1,164 @@
+/* Custom styles for LINE Bot Accounting App */
+
+/* Card styling */
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 5px;
+}
+
+/* Table styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 5px 8px;
+    border-radius: 4px;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    margin: auto;
+    min-height: 250px;
+}
+
+/* Text colors for amounts */
+.text-expense {
+    color: #dc3545;
+}
+
+.text-income {
+    color: #20c997;
+}
+
+/* Summary cards */
+.summary-card {
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+}
+
+/* List group items */
+.list-group-item {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Spacing utilities */
+.mt-6 {
+    margin-top: 4rem;
+}
+
+.mb-6 {
+    margin-bottom: 4rem;
+}
+
+/* Initially hide the "操作" column */
+.editable-action {
+    display: none;
+}
+
+/* Custom styles for the footer */
+.card {
+    background-color: #343a40; /* 深灰色背景 */
+    border: 1px solid #495057; /* 邊框顏色 */
+}
+
+.card-footer {
+    background-color: #495057; /* 次深灰色背景 */
+    border-top: 1px solid #6c757d; /* 邊框顏色 */
+    font-size: 0.85rem; /* 縮小字體 */
+    padding: 0.5rem; /* 減少內邊距 */
+}
+
+.card-title {
+    color: #faf8f8; /* 白色文字 */
+}
+
+.card-text {
+    color: #ced4da; /* 淺灰色文字 */
+}
+
+.text-with-gray-border {
+            text-shadow: -1px -1px 0 gray, 1px -1px 0 gray, -1px 1px 0 gray, 1px 1px 0 gray;
+        }
+
+.paragraph-with-gray-background {
+            background-color: #f5f5f5; /* 淺灰色背景 */
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+
+
+/* Responsive fixes */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Custom styles for the comment section */
+#userComment {
+    resize: none; /* 禁止調整大小 */
+    font-size: 0.9rem; /* 縮小字體 */
+}
+
+#userName {
+    font-size: 0.9rem; /* 縮小字體 */
+}
+
+#submitComment {
+    padding: 0.25rem 0.5rem; /* 縮小按鈕 */
+    font-size: 0.85rem;
+}
+

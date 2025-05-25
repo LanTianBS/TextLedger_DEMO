@@ -1,0 +1,5 @@
+[start]
+cmd = "/opt/venv/bin/python main.py"
+
+[build]
+packages = ["ffmpeg"]

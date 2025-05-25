@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理員頁面</title>
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <form id="adminForm" method="POST" action="/adminsetting">
+        <input type="hidden" name="token" value="{{ token }}">
+    </form>
+    <script>
+        document.getElementById('adminForm').submit();
+    </script>
+</body>
+</html>

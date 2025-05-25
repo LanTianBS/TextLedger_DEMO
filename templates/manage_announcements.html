@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理公告</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="mb-0 text-center"><i class="bi bi-megaphone me-2"></i>管理公告</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- 新增公告表單 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h4 class="mb-0">新增公告</h4>
+                            </div>
+                            <div class="card-body">
+                                <form id="addAnnouncementForm" action="/add_announcement" method="POST">
+                                    <input type="hidden" name="token" value="{{ token }}">
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">標題</label>
+                                        <input type="text" class="form-control" id="title" name="title" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">敘述</label>
+                                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-plus-circle me-2"></i>新增公告
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- 現有公告列表 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h4 class="mb-0">現有公告</h4>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped table-dark">
+                                    <thead>
+                                        <tr>
+                                            <th>標題</th>
+                                            <th>敘述</th>
+                                            <th>建立時間</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for announcement in announcements %}
+                                        <tr>
+                                            <td>{{ announcement.title }}</td>
+                                            <td>{{ announcement.description }}</td>
+                                            <td>{{ announcement.created_at }}</td>
+                                            <td>
+                                                <a href="/edit_announcement/{{ announcement.id }}?token={{ token }}" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil-square"></i> 編輯
+                                                </a>
+                                                <button class="btn btn-sm btn-danger deleteAnnouncementBtn" data-announcement-id="{{ announcement.id }}">
+                                                    <i class="bi bi-trash"></i> 刪除
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 查看與回覆留言區 -->
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h4 class="mb-0">留言區</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="commentsSection">
+                                    {% for comment in comments %}
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ comment.user_name }}</h5>
+                                            <p class="card-text">{{ comment.message }}</p>
+                                            <small class="text-muted">留言時間：{{ comment.created_at }}</small>
+                                            {% if comment.reply %}
+                                            <div class="mt-3">
+                                                <strong>管理員回覆：</strong>
+                                                <p>{{ comment.reply }}</p>
+                                            </div>
+                                            {% endif %}
+                                            <form class="replyForm" data-comment-id="{{ comment.id }}">
+                                                <input type="hidden" name="token" value="{{ token }}">
+                                                <div class="input-group mt-3">
+                                                    <input type="text" class="form-control replyInput" name="reply" placeholder="輸入回覆內容" required>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-reply"></i> 回覆
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <button class="btn btn-sm btn-danger deleteCommentBtn mt-2" data-comment-id="{{ comment.id }}">
+                                                <i class="bi bi-trash"></i> 刪除留言
+                                            </button>
+                                            <button class="btn btn-sm btn-danger deleteReplyBtn mt-2" data-comment-id="{{ comment.id }}">
+                                                <i class="bi bi-trash"></i> 刪除回覆
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <small>© 智能記帳助手 | 管理公告</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const token = "{{ token }}";
+
+            // 確保表單提交時攜帶 token
+            const form = document.getElementById("addAnnouncementForm");
+            form.addEventListener("submit", function () {
+                const actionUrl = form.getAttribute("action");
+                form.setAttribute("action", `${actionUrl}?token=${token}`);
+            });
+
+            // 刪除公告
+            document.querySelectorAll(".deleteAnnouncementBtn").forEach(button => {
+                button.addEventListener("click", async function () {
+                    const announcementId = this.getAttribute("data-announcement-id");
+                    if (confirm("確定要刪除此公告嗎？")) {
+                        try {
+                            const response = await fetch(`/delete_announcement/${announcementId}?token=${token}`, {
+                                method: "DELETE",
+                            });
+                            if (response.ok) {
+                                alert("公告已刪除！");
+                                this.closest("tr").remove();
+                            } else {
+                                alert("刪除公告失敗，請稍後再試！");
+                            }
+                        } catch (error) {
+                            console.error("刪除公告時發生錯誤：", error);
+                            alert("刪除公告失敗，請稍後再試！");
+                        }
+                    }
+                });
+            });
+
+            // 回覆留言
+            document.querySelectorAll(".replyForm").forEach(form => {
+                form.addEventListener("submit", async function (event) {
+                    event.preventDefault();
+                    const commentId = form.getAttribute("data-comment-id");
+                    const replyInput = form.querySelector(".replyInput");
+                    const replyMessage = replyInput.value;
+
+                    if (!replyMessage) {
+                        alert("回覆內容不能為空！");
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/reply_comment/${commentId}?token=${token}`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ reply: replyMessage }),
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            const commentCard = form.closest(".card-body");
+                            const replySection = document.createElement("div");
+                            replySection.classList.add("mt-3");
+                            replySection.innerHTML = `
+                                <strong>管理員回覆：</strong>
+                                <p>${result.reply}</p>
+                                <small class="text-muted">回覆時間：${result.reply_at}</small>
+                            `;
+                            commentCard.appendChild(replySection);
+                            replyInput.value = "";
+                        } else {
+                            alert("回覆失敗，請稍後再試！");
+                        }
+                    } catch (error) {
+                        console.error("回覆時發生錯誤：", error);
+                        alert("回覆失敗，請稍後再試！");
+                    }
+                });
+            });
+
+            // 刪除留言
+            document.querySelectorAll(".deleteCommentBtn").forEach(button => {
+                button.addEventListener("click", async function () {
+                    const commentId = this.getAttribute("data-comment-id");
+                    if (confirm("確定要刪除此留言嗎？")) {
+                        try {
+                            const response = await fetch(`/delete_comment/${commentId}?token=${token}`, {
+                                method: "DELETE",
+                            });
+                            if (response.ok) {
+                                alert("留言已刪除！");
+                                this.closest(".card").remove();
+                            } else {
+                                alert("刪除留言失敗，請稍後再試！");
+                            }
+                        } catch (error) {
+                            console.error("刪除留言時發生錯誤：", error);
+                            alert("刪除留言失敗，請稍後再試！");
+                        }
+                    }
+                });
+            });
+
+            // 刪除回覆
+            document.querySelectorAll(".deleteReplyBtn").forEach(button => {
+                button.addEventListener("click", async function () {
+                    const commentId = this.getAttribute("data-comment-id");
+                    if (confirm("確定要刪除此回覆嗎？")) {
+                        try {
+                            const response = await fetch(`/delete_reply/${commentId}?token=${token}`, {
+                                method: "DELETE",
+                            });
+                            if (response.ok) {
+                                alert("回覆已刪除！");
+                                const replySection = this.closest(".mt-3");
+                                if (replySection) replySection.remove();
+                            } else {
+                                alert("刪除回覆失敗，請稍後再試！");
+                            }
+                        } catch (error) {
+                            console.error("刪除回覆時發生錯誤：", error);
+                            alert("刪除回覆失敗，請稍後再試！");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

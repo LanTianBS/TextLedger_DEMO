@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消費分析 - 智能記帳助手</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #goalMessage {
+            text-shadow: -0.5px -0.5px 0 #626262, 0.5px -0.5px 0 #626262, -0.5px 0.5px 0 #626262, 0.5px 0.5px 0 #626262;
+            background-color: #383f43;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 1rem; /* Increased font size */
+            font-weight: bold; /* Added bold text */
+        }
+    </style>
+
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0 text-center flex-grow-1">消費分析</h2>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Filter options -->
+                        <div class="mb-4">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select id="timeRangeFilter" class="form-select">
+                                        <option value="all">所有時間</option>
+                                        <option value="current_month" {% if time_range == 'current_month' %}selected{% endif %}>本月</option>
+                                        <option value="last_month" {% if time_range == 'last_month' %}selected{% endif %}>上個月</option>
+                                        <option value="last_3_months" {% if time_range == 'last_3_months' %}selected{% endif %}>最近三個月</option>
+                                        <option value="last_6_months" {% if time_range == 'last_6_months' %}selected{% endif %}>最近六個月</option>
+                                        <option value="current_year" {% if time_range == 'current_year' %}selected{% endif %}>今年</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select id="chartTypeFilter" class="form-select">
+                                        <option value="category">類別分析</option>
+                                        <option value="monthly">月份分析</option>
+                                        <option value="income_expense">收支對比</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Date range display -->
+                        <div class="mb-4 text-center">
+                            <h5>日期範圍:</h5>
+                            <span>{{ date_range }}</span>
+                        </div>
+
+                        {% if spending_goal_enabled %}
+                        <div class="mt-4">
+                            <h5>本月開支目標進度</h5>
+                            <span id="goalProgressValue" style="font-size: 0.9em;">0%</span>
+                            <div class="progress mb-3">
+                                <div id="goalProgress" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p id="goalMessage" class="text-center" style="display: none;">您已超過本月開支目標！</p>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const goalAmount = {{ goal_amount }};
+                                const totalSpent = {{ total_spent }};
+                                const progress = Math.min((totalSpent / goalAmount) * 100, 100);
+                                const progressBar = document.getElementById('goalProgress');
+                                const goalProgressValue = document.getElementById('goalProgressValue');
+
+                                progressBar.style.width = `${progress}%`;
+                                progressBar.setAttribute('aria-valuenow', progress);
+                                goalProgressValue.textContent = `${Math.round(progress)}% (${totalSpent} / ${goalAmount})`;
+                                progressBar.style.backgroundColor = '#add8e6'; // 淡藍色進度條
+                                progressBar.style.color = '#000';
+
+                                let message = '';
+                                const goalMessageElement = document.getElementById('goalMessage');
+                                if (totalSpent >= goalAmount) {
+                                    const messages = [
+                                        '警告：您已超過本月開支目標，請立即停止不必要的花費！',
+                                        '注意：您的開支已超標，請重新檢視您的消費習慣！',
+                                        '您已經超過預算，請務必節制開支！',
+                                        '您的花費已經超出目標，請立刻採取行動減少支出！',
+                                        '超支了！請檢查您的消費並減少不必要的開支！',
+                                        '您的開支已經超標，請立即停止非必要的花費！',
+                                        '警告：您的花費已經超出預算，請重新規劃！',
+                                        '您已經花超過了目標金額，請務必節省！',
+                                        '您的開支已經超過限制，請立即控制！',
+                                        '超支警告：請立刻減少不必要的消費！'
+                                    ];
+                                    message = messages[Math.floor(Math.random() * messages.length)];
+                                    goalMessageElement.style.color = 'rgba(255, 102, 102, 0.7)'; // 淡紅色提示文字
+                                } else if (totalSpent >= goalAmount * 0.8) {
+                                    const messages = [
+                                        '提醒：您的開支已接近本月目標，請務必控制花費！',
+                                        '注意：您的花費已接近預算上限，請減少不必要的支出！',
+                                        '警告：您的開支快要超標，請立即檢視您的消費！',
+                                        '您的花費已接近目標，請務必節制！',
+                                        '再花下去就要超標了，請立即停止非必要的消費！',
+                                        '您的開支已接近上限，請重新檢視您的消費計畫！',
+                                        '快到預算上限了，請務必減少不必要的花費！',
+                                        '您的花費快要超出目標，請立即採取行動！',
+                                        '注意：您的開支已接近紅線，請務必節省！',
+                                        '目標快到了，請務必控制您的消費！'
+                                    ];
+                                    message = messages[Math.floor(Math.random() * messages.length)];
+                                    goalMessageElement.style.color = 'rgba(255, 140, 0, 0.5)'; // 更橘的提示文字
+                                } else if (totalSpent >= goalAmount * 0.6) {
+                                    const messages = [
+                                        '提醒：您的開支已達到60%以上，請開始注意節省！',
+                                        '注意：您的花費已經超過60%，請減少不必要的支出！',
+                                        '您的花費已達到60%，請務必控制後續的消費！',
+                                        '您的開支已經過半，請重新檢視您的消費計畫！',
+                                        '您的花費已達到60%，請務必保持節制！',
+                                        '您的開支已經達到60%，請務必減少不必要的花費！',
+                                        '提醒：您的花費已經過半，請注意控制！',
+                                        '您的花費已經達到60%，請務必檢視後續的消費！',
+                                        '注意：您的開支已經達到60%，請減少不必要的支出！',
+                                        '您的花費已經過半，請務必保持理性消費！'
+                                    ];
+                                    message = messages[Math.floor(Math.random() * messages.length)];
+                                    goalMessageElement.style.color = 'rgba(255, 255, 0, 0.4)'; // 淡黃色提示文字
+                                } else {
+                                    const messages = [
+                                        '目前您的開支在範圍內，但請繼續努力節省！',
+                                        '您的花費目前控制得不錯，但還是要注意節省！',
+                                        '現在看起來不錯，但請繼續保持節制的消費習慣！',
+                                        '您的開支目前在範圍內，但請繼續減少不必要的花費！',
+                                        '雖然目前符合目標，但還是要努力節省！',
+                                        '目前的花費狀況良好，但請繼續控制開支！',
+                                        '您的開支目前在控制中，但還是要注意節省！',
+                                        '看起來不錯，但請不要因此放鬆對花費的控制！',
+                                        '目前的狀況良好，但請繼續努力減少開支！',
+                                        '雖然在範圍內，但還是要注意後續的花費！'
+                                    ];
+                                    message = messages[Math.floor(Math.random() * messages.length)];
+                                    goalMessageElement.style.color = 'rgba(0, 255, 0, 0.6)'; // 更亮的綠色提示文字
+                                }
+
+                                goalMessageElement.innerHTML = message.replace(/，/g, '<br>');
+                                goalMessageElement.style.display = 'block';
+
+                                goalMessageElement.style.display = 'block';
+                            });
+                        </script>
+                        {% endif %}
+                        <!-- Charts section -->
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="chartTitle" style="display: none;">類別消費分析</h5>
+                                        <div class="chart-container" style="position: relative; height: 200px;">
+                                            <canvas id="mainChart"></canvas>
+                                        </div>
+                                        <div id="noDataMessage" class="alert alert-info text-center" style="display: none;">
+                                            <i class="bi bi-info-circle me-2"></i> 沒有交易紀錄
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary cards -->
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="card bg-danger bg-opacity-25 h-100">
+                                    <div class="card-body text-center">
+                                        <h5>總支出</h5>
+                                        <h3 id="totalExpense">$0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success bg-opacity-25 h-100">
+                                    <div class="card-body text-center">
+                                        <h5>總收入</h5>
+                                        <h3 id="totalIncome">$0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-primary bg-opacity-25 h-100">
+                                    <div class="card-body text-center">
+                                        <h5>主要支出類別</h5>
+                                        <h3 id="topCategory">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning bg-opacity-25 h-100">
+                                    <div class="card-body text-center">
+                                        <h5>淨結餘</h5>
+                                        <h3 id="netBalance">$0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Category breakdown -->
+                        <div class="mt-4">
+                            <h5>類別明細</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm" id="categoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>類別</th>
+                                            <th class="text-end">金額</th>
+                                            <th class="text-end">百分比</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/chart.js"></script>
+    <script>
+        // Expense and income category data from server
+        const expenseCategories = {{ expense_categories|safe }};
+        const incomeCategories = {{ income_categories|safe }};
+        
+        // Monthly data from server
+        const monthlyData = {{ monthly_data|safe }};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize chart
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            let mainChart = null;
+            
+            function renderCategoryChart() {
+                // Get data for chart
+                const labels = Object.keys(expenseCategories);
+                const values = Object.values(expenseCategories);
+                
+                // Update chart title
+                document.getElementById('chartTitle').textContent = '類別消費分析';
+                
+                // Check if there is no data
+                if (values.length === 0) {
+                    document.getElementById('mainChart').style.display = 'none';
+                    document.getElementById('chartTitle').style.display = 'none';
+                    document.getElementById('noDataMessage').style.display = 'block';
+                    return;
+                } else {
+                    document.getElementById('mainChart').style.display = 'block';
+                    document.getElementById('chartTitle').style.display = 'block';
+                    document.getElementById('noDataMessage').style.display = 'none';
+                }
+                
+                // Set of colors for the chart
+                const backgroundColors = [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(199, 199, 199, 0.7)',
+                    'rgba(83, 102, 255, 0.7)',
+                    'rgba(40, 159, 64, 0.7)',
+                    'rgba(210, 105, 30, 0.7)'
+                ];
+                
+                // Destroy existing chart if it exists
+                if (mainChart) {
+                    mainChart.destroy();
+                }
+                
+                // Create new chart
+                mainChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: backgroundColors.slice(0, labels.length),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            }
+                        }
+                    }
+                });
+                
+                // Update category table
+                updateCategoryTable(labels, values);
+                
+                // Update summary cards
+                updateSummaryCards();
+            }
+            
+            function renderMonthlyChart() {
+                // Get data for chart
+                const sortedMonths = Object.keys(monthlyData).sort();
+                const values = sortedMonths.map(month => monthlyData[month]);
+                
+                // Update chart title
+                document.getElementById('chartTitle').textContent = '月份消費分析';
+                
+                // Check if there is no data
+                if (values.length === 0) {
+                    document.getElementById('mainChart').style.display = 'none';
+                    document.getElementById('chartTitle').style.display = 'none';
+                    document.getElementById('noDataMessage').style.display = 'block';
+                    return;
+                } else {
+                    document.getElementById('mainChart').style.display = 'block';
+                    document.getElementById('chartTitle').style.display = 'block';
+                    document.getElementById('noDataMessage').style.display = 'none';
+                }
+                
+                // Format month labels (YYYY-MM -> MM/YYYY)
+                const formattedLabels = sortedMonths.map(month => {
+                    const [year, monthNum] = month.split('-');
+                    return `${monthNum}/${year}`;
+                });
+                
+                // Destroy existing chart if it exists
+                if (mainChart) {
+                    mainChart.destroy();
+                }
+                
+                // Create new chart
+                mainChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: formattedLabels,
+                        datasets: [{
+                            label: '月份消費',
+                            data: values,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Clear category table
+                document.getElementById('categoryTable').querySelector('tbody').innerHTML = '';
+                
+                // Update summary cards
+                updateSummaryCards();
+            }
+            
+            function renderIncomeExpenseChart() {
+                // Calculate total income and expense
+                let totalIncome = 0;
+                let totalExpense = 0;
+                
+                // Update chart title
+                document.getElementById('chartTitle').textContent = '收支對比';
+                
+                // Calculate total income and expense
+                totalIncome = Object.values(incomeCategories).reduce((sum, value) => sum + value, 0);
+                totalExpense = Object.values(expenseCategories).reduce((sum, value) => sum + value, 0);
+                
+                // Check if there is no data
+                if (totalIncome === 0 && totalExpense === 0) {
+                    document.getElementById('mainChart').style.display = 'none';
+                    document.getElementById('chartTitle').style.display = 'none';
+                    document.getElementById('noDataMessage').style.display = 'block';
+                    return;
+                } else {
+                    document.getElementById('mainChart').style.display = 'block';
+                    document.getElementById('chartTitle').style.display = 'block';
+                    document.getElementById('noDataMessage').style.display = 'none';
+                }
+                
+                // Destroy existing chart if it exists
+                if (mainChart) {
+                    mainChart.destroy();
+                }
+                
+                // Create new chart
+                mainChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['收入', '支出'],
+                        datasets: [{
+                            data: [totalIncome, totalExpense],
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(255, 99, 132, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(255, 99, 132, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Clear category table
+                document.getElementById('categoryTable').querySelector('tbody').innerHTML = '';
+                
+                // Update summary cards
+                updateSummaryCards();
+            }
+            
+            function updateCategoryTable(categories, values) {
+                const tableBody = document.getElementById('categoryTable').querySelector('tbody');
+                tableBody.innerHTML = '';
+                
+                // Calculate total
+                const total = values.reduce((sum, value) => sum + value, 0);
+                
+                // Sort categories by value (descending)
+                const sortedIndices = values.map((_, index) => index)
+                    .sort((a, b) => values[b] - values[a]);
+                
+                sortedIndices.forEach(index => {
+                    const category = categories[index];
+                    const value = values[index];
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${category}</td>
+                        <td class="text-end">$${value.toFixed(2)}</td>
+                        <td class="text-end">${percentage}%</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            function updateSummaryCards() {
+                // Calculate total income and expense
+                let totalIncome = 0;
+                let totalExpense = 0;
+                let topCategory = { name: '-', amount: 0 };
+                
+                // Calculate total income and expense
+                totalIncome = Object.values(incomeCategories).reduce((sum, value) => sum + value, 0);
+                totalExpense = Object.values(expenseCategories).reduce((sum, value) => sum + value, 0);
+                
+                // Find top expense category
+                Object.keys(expenseCategories).forEach(category => {
+                    const amount = expenseCategories[category];
+                    if (amount > topCategory.amount) {
+                        topCategory = { name: category, amount: amount };
+                    }
+                });
+                
+                // Calculate net balance
+                const netBalance = totalIncome - totalExpense;
+                
+                // Update the cards
+                document.getElementById('totalExpense').textContent = `$${totalExpense.toFixed(2)}`;
+                document.getElementById('totalIncome').textContent = `$${totalIncome.toFixed(2)}`;
+                document.getElementById('topCategory').textContent = topCategory.name;
+                document.getElementById('netBalance').textContent = `$${netBalance.toFixed(2)}`;
+            }
+            
+            // Initial chart render
+            renderCategoryChart();
+            
+            // Chart type change handler
+            document.getElementById('chartTypeFilter').addEventListener('change', function() {
+                const chartType = this.value;
+                
+                if (chartType === 'category') {
+                    renderCategoryChart();
+                } else if (chartType === 'monthly') {
+                    renderMonthlyChart();
+                } else if (chartType === 'income_expense') {
+                    renderIncomeExpenseChart();
+                }
+            });
+            
+            // Time range filter change handler
+            document.getElementById('timeRangeFilter').addEventListener('change', function() {
+                const timeRange = this.value;
+                const userId = new URLSearchParams(window.location.search).get('user_id');
+                window.location.href = `/analysis?user_id=${userId}&time_range=${timeRange}`;
+            });
+        });
+    </script>
+</body>
+</html>

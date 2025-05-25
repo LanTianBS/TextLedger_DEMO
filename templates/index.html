@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新公告 - 智能記帳助手</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="mb-0 text-center"><i class="bi bi-megaphone me-2"></i>公告</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- 更新訊息區 -->
+                        <div class="mb-4">
+                            <h4><i class="bi bi-bell me-2"></i>最新更新</h4>
+                            <table class="table table-striped table-dark">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">標題</th>
+                                        <th scope="col">敘述</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for announcement in announcements %}
+                                    <tr>
+                                        <td>{{ announcement.title }}</td>
+                                        <td>{{ announcement.description }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 評論區塊 -->
+                        <div class="mt-4">
+                            <h4><i class="bi bi-chat-dots me-2"></i>留言區</h4>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <form id="commentForm">
+                                        <div class="mb-3">
+                                            <label for="userName" class="form-label">您的名稱</label>
+                                            <input type="text" class="form-control" id="userName" placeholder="輸入您的名稱">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="userComment" class="form-label">您的訊息</label>
+                                            <textarea class="form-control" id="userComment" rows="3" placeholder="輸入您的訊息"></textarea>
+                                        </div>
+                                        <button type="button" id="submitComment" class="btn btn-primary">
+                                            <i class="bi bi-send me-2"></i>送出
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- 顯示評論 -->
+                            <div id="commentsSection">
+                                {% for comment in comments %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ comment.user_name }}</h5>
+                                        <p class="card-text">{{ comment.message }}</p>
+                                        <small class="text-muted">留言時間：</small>
+
+                                        <!-- 直接顯示回覆（如果有） -->
+                                        {% if comment.reply %}
+                                        <div class="mt-2">
+                                            <strong>管理員回覆：</strong>
+                                            <p class="card-text">{{ comment.reply }}</p>
+                                            <small class="text-muted">回覆時間：</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <small>© 智能記帳助手 | 文字記帳</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const announcementsTableBody = document.querySelector('table tbody');
+            const commentsSection = document.getElementById('commentsSection');
+
+            // 載入公告
+            try {
+                const announcementsResponse = await fetch('/api/announcements');
+                if (!announcementsResponse.ok) {
+                    throw new Error('無法獲取公告資料');
+                }
+
+                const announcements = await announcementsResponse.json();
+                announcementsTableBody.innerHTML = ''; // 清空表格內容
+
+                announcements.forEach(announcement => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${announcement.title}</td>
+                        <td>${announcement.description}</td>
+                    `;
+                    announcementsTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('載入公告時發生錯誤:', error);
+            }
+
+            // 載入評論
+            try {
+                const commentsResponse = await fetch('/api/comments');
+                if (!commentsResponse.ok) {
+                    throw new Error('無法獲取評論資料');
+                }
+
+                const comments = await commentsResponse.json();
+                commentsSection.innerHTML = ''; // 清空評論區內容
+
+                comments.forEach(comment => {
+                    const commentCard = document.createElement('div');
+                    commentCard.classList.add('card', 'mb-3');
+
+                    // 解析時間並轉換為台北時區
+                    const createdAt = comment.created_at 
+                        ? new Date(comment.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) 
+                        : '時間未知';
+                    const replyAt = comment.reply_at 
+                        ? new Date(comment.reply_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) 
+                        : '無';
+                    commentCard.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">${comment.name}</h5>
+                            <p class="card-text">${comment.comment}</p>
+                            <small class="text-muted">留言時間：${createdAt}</small>
+                            ${comment.reply ? `
+                            <div class="mt-2">
+                                <strong>管理員回覆：</strong>
+                                <p class="card-text">${comment.reply}</p>
+                                <small class="text-muted">回覆時間：${replyAt}</small>
+                            </div>` : ''}
+                        </div>
+                    `;
+                    commentsSection.appendChild(commentCard);
+                });
+            } catch (error) {
+                console.error('載入評論時發生錯誤:', error);
+            }
+
+            // 提交評論
+            document.getElementById('submitComment').addEventListener('click', async function () {
+                const userName = document.getElementById('userName').value.trim();
+                const userComment = document.getElementById('userComment').value.trim();
+
+                if (!userName || !userComment) {
+                    alert('請輸入名稱和訊息');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/comments', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ name: userName, comment: userComment }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('無法儲存評論');
+                    }
+
+                    const savedComment = await response.json();
+
+                    // 新增評論到評論區
+                    const commentCard = document.createElement('div');
+                    commentCard.classList.add('card', 'mb-3');
+                    commentCard.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">${savedComment.name}</h5>
+                            <p class="card-text">${savedComment.comment}</p>
+                            <small class="text-muted">留言時間：${new Date(savedComment.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}</small>
+                        </div>
+                    `;
+                    commentsSection.appendChild(commentCard);
+
+                    // 清空輸入框
+                    document.getElementById('userName').value = '';
+                    document.getElementById('userComment').value = '';
+                } catch (error) {
+                    alert('儲存評論時發生錯誤，請稍後再試');
+                    console.error(error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

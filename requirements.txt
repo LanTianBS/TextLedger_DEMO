@@ -1,0 +1,15 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+python-dotenv==1.0.0
+line-bot-sdk==3.14.2
+PyJWT==2.8.0
+google-generativeai==0.8.3
+werkzeug==3.0.3
+psycopg2-binary==2.9.10
+pydantic==2.10.6
+pytz==2023.3.post1
+sqlalchemy==2.0.29
+Pillow==10.0.1
+olefile==0.47
+pycryptodome==3.22.0
+google-cloud-speech

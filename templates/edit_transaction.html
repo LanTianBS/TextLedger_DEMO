@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯交易記錄 - 智能記帳助手</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0 text-center flex-grow-1">編輯交易記錄</h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">描述</label>
+                                <input type="text" class="form-control" id="description" name="description" value="{{ transaction.description }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">金額</label>
+                                <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ transaction.amount }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tx_type" class="form-label">類型</label>
+                                <select class="form-select" id="tx_type" name="tx_type" required>
+                                    <option value="支出" {% if transaction.tx_type == '支出' %}selected{% endif %}>支出</option>
+                                    <option value="收入" {% if transaction.tx_type == '收入' %}selected{% endif %}>收入</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="date" class="form-label">日期</label>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ transaction.date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="category" class="form-label">類別</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    {% for category in categories %}
+                                    <option value="{{ category.name }}" {% if transaction.category.name == category.name %}selected{% endif %}>{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-primary">保存變更</button>
+                                </div>
+                                <div class="d-flex">
+                                    {% set source = request.args.get('source') %}
+                                    {% if source != 'line' %}
+                                    <a href="javascript:history.back()" class="btn btn-secondary me-2">取消</a>
+                                    {% endif %}
+                                    <a href="{{ url_for('delete_transaction', transaction_id=transaction.id) }}" class="btn btn-danger" onclick="return confirm('確定要刪除這筆交易嗎？')">刪除</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設置 - 智能記帳助手</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2>設置</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">在此頁面，您可以設定本月的開支目標金額。系統會自動根據當前月份計算天數，幫助您更好地控管支出。</p>
+                        <!-- 開支目標設定 -->
+                        <div class="mb-4">
+                            <h5>本月開支目標</h5>
+                            <form method="POST" action="/settings?user_id={{ user_id }}">
+                                <input type="hidden" name="user_id" value="{{ user_id }}">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="spendingGoalEnabled" name="spending_goal_enabled" {% if spending_goal_enabled %}checked{% endif %}>
+                                    <label class="form-check-label" for="spendingGoalEnabled">啟用本月開支目標</label>
+                                </div>
+                                <div id="spendingGoalParams" class="mt-3" style="display: {% if spending_goal_enabled %}block{% else %}none{% endif %};">
+                                    <div class="mb-3">
+                                        <label for="goalAmount" class="form-label">目標金額</label>
+                                        <input type="number" class="form-control" id="goalAmount" name="goal_amount" placeholder="輸入目標金額" value="{{ goal_amount }}">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">保存設置</button>
+                            </form>
+                        </div>
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                            <div class="alert alert-{{ messages[0][0] }} mt-3" role="alert">
+                                {{ messages[0][1] }}
+                            </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('spendingGoalEnabled').addEventListener('change', function() {
+            const params = document.getElementById('spendingGoalParams');
+            if (this.checked) {
+                params.style.display = 'block';
+            } else {
+                params.style.display = 'none';
+            }
+        });
+
+        // 自動隱藏提示信息
+        const alertBox = document.querySelector('.alert');
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.transition = 'opacity 0.5s';
+                alertBox.style.opacity = '0';
+                setTimeout(() => alertBox.remove(), 500); // 完全隱藏後移除元素
+            }, 3000); // 3秒後隱藏
+        }
+    </script>
+</body>
+</html>

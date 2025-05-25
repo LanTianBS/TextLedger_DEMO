@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示訊息</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var message = "{{ message }}";
+            var success = {{ success | tojson }};
+            alert(message);
+            if (success) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/adminsetting';
+                
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'token';
+                tokenInput.value = "{{ token }}";
+                form.appendChild(tokenInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                window.history.back();
+            }
+        });
+    </script>
+</head>
+<body>
+</body>
+</html>
